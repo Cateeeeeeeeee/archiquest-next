@@ -1,26 +1,43 @@
 "use client";
-import { Canvas } from "@react-three/fiber";
-import {
-  Fisheye,
-  Environment,
-  OrbitControls,
-  PerspectiveCamera,
-} from "@react-three/drei";
-export default function Panorama({ img }: { img: string }) {
+import React from 'react';
+import { Canvas } from '@react-three/fiber';
+import { CubeTextureLoader } from 'three';
+import { Environment, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import SelectImageRegion from './SelectImageRegion';
+
+type PanoramaProps = {
+  images: string[];
+  onTreasureFound: (selectedRegion: string) => void;
+};
+
+export default function Panorama({ images, onTreasureFound }: PanoramaProps) {
+  const handleRegionSelected = (selectedRegion: string) => {
+    onTreasureFound(selectedRegion);
+  };
+
+  const loadCubeTexture = (images: string[]) => {
+    if (!images || images.length === 0) {
+      // Return a default cube texture or handle the case when images are not available
+      return null;
+    }
+    const loader = new CubeTextureLoader();
+    return loader.load(images);
+  };
+
   return (
-    <Canvas>
-      <Environment
-        files={img}
-        ground={{ height: 60, radius: 100, scale: 200 }}
-      />
-      <OrbitControls
-        enableZoom={true}
-        enablePan={false}
-        minPolarAngle={0}
-        maxPolarAngle={Math.PI}
-        makeDefault
-      />
-      <PerspectiveCamera makeDefault position={[45, 45, 10]} fov={100} />
-    </Canvas>
+    <div className="relative w-full h-[400px]">
+      <Canvas>
+        {images && images.length > 0 && (
+          <>
+            <Environment map={loadCubeTexture(images)} background />
+            <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
+            <PerspectiveCamera makeDefault position={[0, 0, 0]} fov={75} />
+          </>
+        )}
+      </Canvas>
+      <div className="absolute top-0 left-0 w-full h-full">
+        <SelectImageRegion onSelect={handleRegionSelected} />
+      </div>
+    </div>
   );
 }

@@ -6,7 +6,7 @@ import { useState } from "react";
 export default function App() {
   const [fetching, setFetching] = useState<boolean>(false);
   const [img, setImg] = useState<string>("/old_depot_2k.hdr");
-  const [prompt, setPrompt] = useState<string>("a beautiful underwater reef");
+  const [prompt, setPrompt] = useState<string>("a beautiful epic view of a lost civilization with glittering waterfalls, rusting advanced futuristic technology, bright greenblue pool below, abandoned white high tech buildings, a large pale pink sky over massive waterfalls. microdetailed, masterpiece");
   const handleCreate = async () => {
     setFetching(true);
     const pano = await getPanorama(prompt);
