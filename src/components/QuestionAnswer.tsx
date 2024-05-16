@@ -1,47 +1,43 @@
 "use client";
-
 import { getGroqCompletion } from "@/ai/groq";
 import { useState } from "react";
 
-export default function QuestionAnswer() {
+interface QuestionAnswerProps {
+  onCorrectAnswer: () => void; // Add a callback function for correct answers
+}
+
+export default function QuestionAnswer({ onCorrectAnswer }: QuestionAnswerProps) {
   const [question, setQuestion] = useState<string>("");
   const [answer, setAnswer] = useState<string>("");
   const [response, setResponse] = useState<string>("");
 
   const createQuestion = async () => {
-    //get groq to generate a theme for our question
-    const theme = await getGroqCompletion(
-      "Generate a theme for a gameshow question",
-      100,
-      ""
-    );
-    //get groq to generate a type of gameshow question
-    const type = await getGroqCompletion(
-      `The theme of a gameshow is ${theme}. Generate an engaging and interesting type of question for players to answer. 
-      Don't generate the question yet, just think of a general type.`,
-      100,
-      ""
-    );
-    //get groq to generate a question
+    // Generate a theme related to the treasure hunt or environment
+    const theme = await getGroqCompletion("Generate a theme related to a treasure hunt", 100, "");
+
+    // Generate a riddle question based on the theme
     const generatedQuestion = await getGroqCompletion(
-      `The theme of a gameshow is ${theme}. The type of the question is ${type}. Generate a gameshow question for the players to answer.`,
+      `The theme is ${theme}. Generate a riddle question related to a treasure hunt.`,
       100,
       ""
     );
 
-    //save that in state so that we can display it to the user
     setQuestion(generatedQuestion);
   };
 
   const submitAnswer = async () => {
-    //send groq our answer, see if its correct, and get a score
-    const answerCorrent = await getGroqCompletion(
-      `The question was ${question}. The player's answer is ${answer}. Is the answer correct? If so, what is the score?`,
+    const answerCorrect = await getGroqCompletion(
+      `The question was ${question}. The player's answer is ${answer}. Is the answer correct?`,
       100,
       ""
     );
 
-    setResponse(answerCorrent);
+    setResponse(answerCorrect);
+
+    // If the answer is correct, call the callback function
+    if (answerCorrect.includes("correct")) {
+      onCorrectAnswer();
+    }
   };
 
   return (

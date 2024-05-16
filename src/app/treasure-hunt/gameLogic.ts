@@ -1,60 +1,49 @@
-import { getPanorama } from '@/ai/blockade';
-import { getGroqCompletion } from '@/ai/groq';
-import { getGeminiVision } from '@/ai/gemini';
-// import { supabase } from '@/supabase/supabase';
+"use client";
+import { getPanorama } from "@/ai/blockade";
+import { getGeminiVision } from "@/ai/gemini";
+import { generateImageFal, getGroqCompletion } from "@/ai/fal";
+import { describeImagePrompt, generateTagsPrompt } from "@/ai/prompts";
 
-export async function startNewRound(round: number) {
-  const prompt = `Generate a unique panoramic environment for a treasure hunt game, round ${round}.`;
+export const startNewRound = async () => {
+  // Generate a new panorama
+  const prompt = "Generate a panoramic view of a treasure hunt environment";
+  const panoramaUrl = await getPanorama(prompt);
 
-  const panoramaImages = await Promise.all([
-    getPanorama(`${prompt}, right`),
-    getPanorama(`${prompt}, left`),
-    getPanorama(`${prompt}, top`),
-    getPanorama(`${prompt}, bottom`),
-    getPanorama(`${prompt}, front`),
-    getPanorama(`${prompt}, back`),
-  ]);
+  // Generate clues
+  const clues = await generateClues();
 
-  const cluePrompt = `Generate three clues for a treasure hidden in a ${prompt}.`;
-  const clues = await getGroqCompletion(cluePrompt, 100, '');
+  return { panoramaUrl, clues };
+};
 
-  return {
-    images: panoramaImages,
-    clues: clues.split(',').map((clue) => clue.trim()),
-  };
-}
+export const checkTreasureLocation = async (imgUrl: string) => {
+  const description = await getGeminiVision(
+    "Identify if there is a treasure in this image.",
+    imgUrl
+  );
+  return description.includes("treasure");
+};
 
-export async function checkTreasureLocation(selectedRegion: string) {
-  const prompt = `Analyze the selected region and determine if the treasure is present.`;
-  const analysis = await getGeminiVision(prompt, selectedRegion);
+const generateClues = async () => {
+  // Generate keywords using the TagCloud component
+  const prompt = "Generate keywords related to a treasure hunt environment";
+  const keywords = await getGroqCompletion(prompt, 64, generateTagsPrompt);
 
-  return analysis.includes('treasure found');
-}
+  // Generate image hints using the ImageGallery component
+  const imageDescriptions = await getGroqCompletion(
+    prompt,
+    64,
+    describeImagePrompt
+  );
+  const imageHints = await Promise.all(
+    imageDescriptions.split("\n").map((desc) => generateImageFal(desc, "square"))
+  );
 
-export async function updateScore(round: number, timeRemaining: number, userId: string) {
-  const baseScore = 100;
-  const timeBonus = Math.floor(timeRemaining / 30); // Bonus points for every 30 seconds remaining
+  // Generate a riddle using the TextToSpeech component
+  const riddle = await getGroqCompletion(
+    `Generate a riddle related to ${keywords}`,
+    64,
+    ""
+  );
 
-  const score = baseScore + timeBonus;
-
-  // Update the player's score in the database (Supabase)
-  await updatePlayerScore(userId, score);
-
-  return score;
-}
-
-// Function to update the player's score in the Supabase database
-async function updatePlayerScore(userId: string, score: number) {
-  // Placeholder for updating player score
-  console.log(`Updating player score: userId=${userId}, score=${score}`);
-
-  // const { data, error } = await supabase
-  //   .from('player_scores')
-  //   .insert([{ user_id: userId, score: score }]);
-
-  // if (error) {
-  //   console.error('Error updating player score:', error);
-  // } else {
-  //   console.log('Player score updated successfully');
-  // }
-}
+  return { keywords, imageHints, riddle };
+};

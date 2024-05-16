@@ -1,62 +1,56 @@
 "use client";
+import Panorama from "@/components/Panorama";
+import TreasureClues from "@/components/TreasureClues";
+import QuestionAnswer from "@/components/QuestionAnswer";
+import { useEffect, useState } from "react";
+import { getPanorama } from "@/ai/blockade";
 
-import React, { useState, useEffect } from 'react';
-import Panorama from '@/components/Panorama';
-import TreasureClues from '@/components/TreasureClues';
-import Leaderboard from '@/components/Leaderboard';
-import { startNewRound, checkTreasureLocation, updateScore } from './gameLogic';
-
-export default function TreasureHuntPage() {
-  const [round, setRound] = useState(1);
+export default function TreasureHunt() {
+  const [panorama, setPanorama] = useState("");
   const [score, setScore] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes in seconds
-  const [panoramaImages, setPanoramaImages] = useState<string[]>([]);
-  const [clues, setClues] = useState<string[]>([]);
+  const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes
 
   useEffect(() => {
-    // Start a new round when the component mounts or the round changes
-    const startRound = async () => {
-      const { images, clues } = await startNewRound(round);
-      setPanoramaImages(images);
-      setClues(clues);
+    // Generate a new panorama for the round
+    const generatePanorama = async () => {
+      const prompt = "Generate a panoramic view of a treasure hunt environment";
+      const panoramaUrl = await getPanorama(prompt);
+      setPanorama(panoramaUrl);
     };
 
-    startRound();
-  }, [round]);
+    generatePanorama();
 
-  useEffect(() => {
-    // Timer logic
+    // Start the timer
     const timer = setInterval(() => {
       setTimeRemaining((prevTime) => prevTime - 1);
     }, 1000);
 
-    // Clear the timer when the component unmounts or the round changes
-    return () => {
-      clearInterval(timer);
-    };
-  }, [round]);
+    return () => clearInterval(timer);
+  }, []);
 
-  const handleTreasureFound = async (selectedRegion: string) => {
-    const isFound = await checkTreasureLocation(selectedRegion);
-    if (isFound) {
-      const pointsEarned = await updateScore(round, timeRemaining, 'player1'); // Placeholder userId
-      setScore((prevScore) => prevScore + pointsEarned);
-      setRound((prevRound) => prevRound + 1);
-      setTimeRemaining(300); // Reset the timer for the next round
+  const handleTreasureFound = (found: boolean) => {
+    if (found) {
+      // Update score based on time remaining
+      setScore((prevScore) => prevScore + timeRemaining);
     }
+    // Start a new round
+  };
+
+  const handleCorrectAnswer = () => {
+    // Award bonus points for a correct answer
+    setScore((prevScore) => prevScore + 100); // Adjust the bonus points as needed
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <h1>Treasure Hunt in AI-Generated Worlds</h1>
-      <Panorama images={panoramaImages} onTreasureFound={handleTreasureFound} />
-      <TreasureClues clues={clues} />
-      <div>
-        <p>Round: {round}</p>
-        <p>Score: {score}</p>
-        <p>Time Remaining: {timeRemaining} seconds</p>
-      </div>
-      <Leaderboard />
-    </main>
+    <div>
+      <Panorama
+        img={panorama}
+        onTreasureFound={handleTreasureFound}
+        timeRemaining={timeRemaining}
+      />
+      <TreasureClues />
+      <div>Score: {score}</div>
+      <QuestionAnswer onCorrectAnswer={handleCorrectAnswer} />
+    </div>
   );
 }

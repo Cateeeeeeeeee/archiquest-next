@@ -1,34 +1,52 @@
 "use client";
-import React from 'react';
-import TagCloud from './TagCloud';
-import ImageGallery from './ImageGallery';
-import TextToSpeech from './TextToSpeech';
+// src/components/TreasureClues.tsx
+import TagCloud from "./TagCloud";
+import ImageGallery from "./ImageGallery";
+import TextToSpeech from "./TextToSpeech";
+import { generateImageFal, getGroqCompletion } from "@/ai/fal";
+import { describeImagePrompt } from "@/ai/prompts";
+import { useState, useEffect } from "react";
 
-type TreasureCluesProps = {
-  clues: string[];
-};
+export default function TreasureClues() {
+  const [keywords, setKeywords] = useState("");
+  const [imageHints, setImageHints] = useState<string[]>([]);
+  const [riddle, setRiddle] = useState("");
 
-export default function TreasureClues({ clues }: TreasureCluesProps) {
+  useEffect(() => {
+    const generateClues = async () => {
+      // Generate keywords using the TagCloud component
+      const prompt = "Generate keywords related to a treasure hunt environment";
+      const keywords = await getGroqCompletion(prompt, 64, generateTagsPrompt);
+      setKeywords(keywords);
+
+      // Generate image hints using the ImageGallery component
+      const imageDescriptions = await getGroqCompletion(
+        prompt,
+        64,
+        describeImagePrompt
+      );
+      const imageHints = await Promise.all(
+        imageDescriptions.split("\n").map((desc) => generateImageFal(desc, "square"))
+      );
+      setImageHints(imageHints);
+
+      // Generate a riddle using the TextToSpeech component
+      const riddle = await getGroqCompletion(
+        `Generate a riddle related to ${keywords}`,
+        64,
+        ""
+      );
+      setRiddle(riddle);
+    };
+
+    generateClues();
+  }, []);
+
   return (
     <div>
-      <h2>Clues</h2>
-      <TagCloud tags={clues} />
-      <ImageGallery images={generateImageClues(clues)} />
-      <TextToSpeech text={generateRiddle(clues)} />
+      <TagCloud prompt={keywords} totalTags={20} handleSelect={(tags) => {}} />
+      <ImageGallery images={imageHints.map((url) => ({ src: url, title: "" }))} />
+      <TextToSpeech text={riddle} showControls autoPlay />
     </div>
   );
-}
-
-// Generate image clues based on the given clues (placeholder function)
-function generateImageClues(clues: string[]): string[] {
-  // Implement the logic to generate image clues using FAL-AI or Groq API
-  // Return an array of image URLs
-  return ['image1.jpg', 'image2.jpg', 'image3.jpg'];
-}
-
-// Generate a riddle based on the given clues (placeholder function)
-function generateRiddle(clues: string[]): string {
-  // Implement the logic to generate a riddle using FAL-AI or Groq API
-  // Return the generated riddle as a string
-  return 'I am not alive, but I grow; I don\'t have lungs, but I need air; I don\'t have a mouth, but water kills me. What am I?';
 }
