@@ -1,4 +1,4 @@
-import { Message } from "@/ai/groq";
+import { Message } from "@/ai/types";
 
 //Component for viewing chat history
 export default function ChatHistory({ messages }: { messages: Message[] }) {

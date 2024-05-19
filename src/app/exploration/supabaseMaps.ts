@@ -21,6 +21,14 @@ export async function getMapCoordinates() {
   return map;
 }
 
+export async function setVisited(id: string) {
+  let { data: map, error } = await supabase
+    .from("map")
+    .update({ visited: true })
+    .eq("id", id);
+  return map;
+}
+
 export async function getLastMapCoordinate() {
   const { data, error } = await supabase
     .from("map")

@@ -1,5 +1,5 @@
 import { getGroqCompletion, getGroqCompletionParallel } from "@/ai/groq";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 //function that runs multiple prompts for expert analysis and updates a given state object
 export default function Experts({

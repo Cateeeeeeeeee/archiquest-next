@@ -1,4 +1,5 @@
-import { Message, getGroqChat } from "@/ai/groq";
+import { getGroqChat } from "@/ai/groq";
+import { Message } from "@/ai/types";
 import { useState } from "react";
 
 //Component for sending chat messages and storing the history

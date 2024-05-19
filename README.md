@@ -35,10 +35,11 @@ GROQ=your_key
 FAL_KEY=your_key
 ```
 
-If you want to use Google Gemini (which allows for very large prompts including images) then you will also need to add your Gemini API key
+If you want to use other LLMs like OpenAI or Google Gemini (which allows for very large prompts including images) then you will also need to add these API keys:
 
 ```JS
 GEMINI=your_key
+OPENAI=your_key
 ```
 
 If you want to use Deepgram (for fast test to speech) then add your Deepgram API key

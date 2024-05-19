@@ -1,4 +1,3 @@
-import { getGeminiText } from "@/ai/gemini";
 import { getGroqCompletion, getGroqCompletionParallel } from "@/ai/groq";
 import { useState } from "react";
 

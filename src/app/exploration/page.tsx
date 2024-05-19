@@ -6,6 +6,7 @@ import {
   getLastMapCoordinate,
   saveConnections,
   saveMapCoordinates,
+  setVisited,
 } from "./supabaseMaps";
 import { useEffect, useState } from "react";
 import { getGroqCompletionParallel } from "@/ai/groq";
@@ -66,14 +67,19 @@ export default function ExplorationPage() {
           newLocationsDb.map((n) => ({ start: location.id, end: n.id }))
         );
 
+        //set the currently location to be visited
+        await setVisited(location.id);
+
         generatedLocations.forEach((n, i) => {
           n.id = newLocationsDb[i].id;
           n.connections = [location];
+          n.visited = false;
         });
 
         mapNodes.push(...generatedLocations);
       }
 
+      location.visited = true;
       //If no connections then we are on the edge of the graph. Create some new ones.
       setLocations([...locations, ...mapNodes]);
     }
@@ -87,7 +93,7 @@ export default function ExplorationPage() {
     //create some random heading vectors in [x,y,z] format
     const headings = Array.from({ length: 3 }, randomHeading);
 
-    const { id, connections, ...locationDesc } = location;
+    const { id, connections, visited, ...locationDesc } = location;
 
     const coordinatesString = await getGroqCompletionParallel(
       headings.map(

@@ -1,4 +1,4 @@
-import { getGroqCompletion, getGroqCompletionParallel } from "@/ai/groq";
+import { getGroqCompletion } from "@/ai/groq";
 import { useState } from "react";
 
 //function that runs multiple prompts for expert analysis and updates a given state object

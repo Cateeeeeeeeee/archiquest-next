@@ -1,5 +1,6 @@
 "use client";
 import { getGeminiVision } from "@/ai/gemini";
+import { getOpenAICompletion } from "@/ai/openai";
 import SelectImageRegion from "@/components/SelectImageRegion";
 import { useState } from "react";
 
@@ -10,19 +11,21 @@ export default function WhatsThisPage() {
 
   const handleSelect = async (imgUrl: string) => {
     setDescription("Analyzing...");
+    /*
     const description = await getGeminiVision(
       "Briefly describe the image.",
       imgUrl
     );
+    */
+    const description = await getOpenAICompletion(
+      "briefly describe the image. Guess where in the world it is located.",
+      128,
+      "",
+      false,
+      imgUrl
+    );
     setDescription(description);
     setImageUrl(imgUrl);
-  };
-
-  const downloadImage = () => {
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = "selected-region.png";
-    link.click();
   };
 
   return (
@@ -31,7 +34,6 @@ export default function WhatsThisPage() {
         <div className="flex flex-col gap-4">
           <span className="text max-w-sm">{description}</span>
           <SelectImageRegion img="/sat.jpg" onSelect={handleSelect} />
-          <button onClick={downloadImage}>Download PNG</button>
         </div>
       </div>
     </main>

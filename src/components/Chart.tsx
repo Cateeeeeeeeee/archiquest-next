@@ -9,6 +9,7 @@ export type MapLocation = {
   y: number;
   z: number;
   image?: string;
+  visited: boolean;
 };
 
 export type MapConnection = {
@@ -72,7 +73,7 @@ const ZoomablePannableCanvas = ({
         const y = feature.y;
         const fontSize = 10 / scale;
         ctx.font = `${fontSize}px Arial`;
-        ctx.fillStyle = "blue";
+        ctx.fillStyle = feature.visited ? "blue" : "gray";
         ctx.textAlign = "center";
         ctx.fillText(
           feature.description,

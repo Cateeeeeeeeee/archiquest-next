@@ -1,6 +1,10 @@
 "use client";
+import { getGroqCompletion } from "@/ai/groq";
 import Agents from "@/components/Agents";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Animation from "@/components/Animation";
+import { describeImagePrompt } from "@/ai/prompts";
+import TextToSpeech from "@/components/TextToSpeech";
 
 //Anything you want in your scenario to track over time goes here
 //This should really be things like current challenges, disasters, successes, design issues etc
@@ -12,7 +16,6 @@ const initResources = {
   environmentalImpact: "",
   revenue: "",
 };
-
 const initAgents = [
   {
     goal: "increase market demand for timber while maintaining environmental awareness",
@@ -40,16 +43,38 @@ export default function AgentsPage() {
   const [agents, setAgents] = useState<string[]>(
     initAgents.map((a) => JSON.stringify(a))
   );
+  const [worldDescription, setWorldDescription] = useState<string>("");
 
-  const handleResponse = (newResources: any, newAgents: any[]) => {
+  useEffect(() => {
+    //create our documentary synopsis
+    const createSynopsis = async () => {
+      const synopsis = await getGroqCompletion(
+        "A documentary about the impact of deforestation on the environment",
+        256,
+        "You are provided with a prompt to write a short synopsis for a documentary film. Avoid flowerly language and hyperbole. "
+      );
+      setWorldDescription(synopsis);
+    };
+    createSynopsis();
+  }, []);
+
+  const handleResponse = async (newResources: any, newAgents: any[]) => {
+    //update the resources based on the new agents
+    const description = await getGroqCompletion(
+      `World State: ${newResources}. Agents: ${newAgents}`,
+      128,
+      "You are provided with a world state and an array of agents performing tasks to make changes to this world state. Write a short synopsis for a documentary film summarizing what has happened. Avoid flowerly language and hyperbole. "
+    );
+
+    setWorldDescription(description);
     //update resources and agents
     setResources(newResources);
     setAgents(newAgents);
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
+    <main className="flex min-h-screen flex-col items-end justify-between p-24">
+      <div className="z-10 max-w-lg w-full items-center justify-between font-mono text-sm lg:flex">
         <div className="flex flex-col w-full">
           <div>
             {Object.keys(resources).map((key) => (
@@ -59,7 +84,18 @@ export default function AgentsPage() {
               </div>
             ))}
           </div>
-
+          <div>{worldDescription}</div>
+          {worldDescription !== "" && (
+            <>
+              <Animation
+                prompt={`${worldDescription}`}
+                systemPrompt={describeImagePrompt}
+                imageSize="landscape_16_9"
+                animate={0}
+                fullscreen={true}
+              />
+            </>
+          )}
           <Agents
             initResources={resources}
             initAgents={agents}

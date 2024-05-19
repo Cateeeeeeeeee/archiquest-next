@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useRef } from "react";
 
-interface SelectionArea {
-  startX: number;
-  startY: number;
+export interface SelectionArea {
+  x: number;
+  y: number;
   width: number;
   height: number;
 }
@@ -17,8 +17,8 @@ export default function SelectImageRegion({
 }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionArea, setSelectionArea] = useState<SelectionArea>({
-    startX: 0,
-    startY: 0,
+    x: 0,
+    y: 0,
     width: 0,
     height: 0,
   });
@@ -28,8 +28,8 @@ export default function SelectImageRegion({
     event.preventDefault();
     const rect = imgRef.current!.getBoundingClientRect();
     setSelectionArea({
-      startX: event.clientX - rect.left,
-      startY: event.clientY - rect.top,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
       width: 0,
       height: 0,
     });
@@ -42,8 +42,8 @@ export default function SelectImageRegion({
     const rect = imgRef.current!.getBoundingClientRect();
     setSelectionArea((prev) => ({
       ...prev,
-      width: event.clientX - rect.left - prev.startX,
-      height: event.clientY - rect.top - prev.startY,
+      width: event.clientX - rect.left - prev.x,
+      height: event.clientY - rect.top - prev.y,
     }));
   };
 
@@ -54,8 +54,8 @@ export default function SelectImageRegion({
       canvasRef.current.height = Math.abs(selectionArea.height);
       ctx.drawImage(
         imgRef.current,
-        selectionArea.startX,
-        selectionArea.startY,
+        selectionArea.x,
+        selectionArea.y,
         selectionArea.width,
         selectionArea.height,
         0,
@@ -87,12 +87,12 @@ export default function SelectImageRegion({
           style={{
             left:
               selectionArea.width > 0
-                ? selectionArea.startX + "px"
-                : selectionArea.startX + selectionArea.width + "px",
+                ? selectionArea.x + "px"
+                : selectionArea.x + selectionArea.width + "px",
             top:
               selectionArea.height > 0
-                ? selectionArea.startY + "px"
-                : selectionArea.startY + selectionArea.height + "px",
+                ? selectionArea.y + "px"
+                : selectionArea.y + selectionArea.height + "px",
             width: Math.abs(selectionArea.width) + "px",
             height: Math.abs(selectionArea.height) + "px",
           }}
