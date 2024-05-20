@@ -11,12 +11,13 @@ export default function WhatsThisPage() {
 
   const handleSelect = async (imgUrl: string) => {
     setDescription("Analyzing...");
-    /*
+
     const description = await getGeminiVision(
-      "Briefly describe the image.",
+      "Briefly describe the image. Guess where in the world it is located.",
       imgUrl
     );
-    */
+    /*
+    //Open AI option
     const description = await getOpenAICompletion(
       "briefly describe the image. Guess where in the world it is located.",
       128,
@@ -24,6 +25,7 @@ export default function WhatsThisPage() {
       false,
       imgUrl
     );
+    */
     setDescription(description);
     setImageUrl(imgUrl);
   };

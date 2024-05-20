@@ -9,7 +9,7 @@ import { getGeminiVision } from "@/ai/gemini";
 import GenerateTagCloud from "@/components/TagCloud";
 import { saveArtwork } from "./supabaseArt";
 import TextToSpeech from "@/components/TextToSpeech";
-import BlendImage from "@/components/BlendImage";
+import Blend, { BlendImage } from "@/components/Blend";
 
 type Artwork = {
   description: string;

@@ -1,7 +1,7 @@
-import { generateImageFal } from "@/ai/fal";
+import { generateImageFal, generateVideoFal } from "@/ai/fal";
 import { getGroqCompletion } from "@/ai/groq";
-import { useEffect, useState } from "react";
-import BlendImage from "./BlendImage";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import Blend, { BlendImage } from "./Blend";
 
 type AnimationProps = {
   prompt: string;
@@ -10,6 +10,7 @@ type AnimationProps = {
   animate: number;
   fullscreen: boolean;
   onChange?: (url: string) => void;
+  video?: boolean;
 };
 
 //Component that uses groq to generate image descriptions from prompts, then uses fal to generates the image and blends them together.
@@ -21,8 +22,10 @@ export default function Animation({
   animate,
   fullscreen,
   onChange,
+  video = false,
 }: AnimationProps) {
-  const [image, setImage] = useState<string>("");
+  const [image, setImage] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function generateImage() {
@@ -35,8 +38,22 @@ export default function Animation({
       return url;
     }
 
+    async function generateVideo(url: string) {
+      const videoUrl = await generateVideoFal(url, 4);
+      return videoUrl;
+    }
+
     if (animate === 0) {
-      generateImage().then((url) => setImage(url));
+      generateImage().then((url) => {
+        setImage(url);
+        setVideoUrl(null);
+        console.log("generating video");
+        if (video && url)
+          generateVideo(url).then((videoUrl) => {
+            console.log("got video", videoUrl);
+            setVideoUrl(videoUrl);
+          });
+      });
     } else {
       const interval = setInterval(async () => {
         const url = await generateImage();
@@ -46,7 +63,25 @@ export default function Animation({
 
       return () => clearInterval(interval); // Cleanup
     }
-  }, [prompt, animate, systemPrompt, imageSize, onChange]);
+  }, [prompt, animate, systemPrompt, imageSize, onChange, video]);
 
-  return <BlendImage src={image} fullscreen={fullscreen} />;
+  return (
+    <Blend
+      component={
+        videoUrl ? (
+          <video
+            poster={image ?? ""}
+            src={videoUrl}
+            autoPlay
+            className="w-full h-full object-cover"
+            muted
+            loop
+          />
+        ) : (
+          <img className="w-full  h-full  object-cover" src={image ?? ""} />
+        )
+      }
+      fullscreen={fullscreen}
+    />
+  );
 }

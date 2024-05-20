@@ -1,5 +1,5 @@
 "use client";
-import BlendImage from "@/components/BlendImage";
+import Blend, { BlendImage } from "@/components/Blend";
 import SketchToImage from "@/components/SketchToImage";
 import { useState } from "react";
 

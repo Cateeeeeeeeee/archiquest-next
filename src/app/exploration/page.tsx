@@ -4,6 +4,7 @@ import ZoomablePannableCanvas, { MapNode } from "@/components/Chart";
 import {
   getConnectedLocations,
   getLastMapCoordinate,
+  getMap,
   saveConnections,
   saveMapCoordinates,
   setVisited,
@@ -23,27 +24,30 @@ export default function ExplorationPage() {
     null
   );
   const [locations, setLocations] = useState<MapNode[]>([]);
-
   const scale = 100;
 
   useEffect(() => {
     //use the last created location as a starting coordinate
 
-    const getMap = async () => {
-      const start = await getLastMapCoordinate();
-      if (!start) return;
-      //now go get all connections for this location and build up a graph
-      const connections = await getConnectedLocations(start.id, false);
-      if (!connections) return;
+    const createMap = async () => {
+      const { map, connections } = await getMap();
+      if (!connections || !map) return;
+      const graph = connections.reduce((acc, c) => {
+        if (!acc[c.start]) acc[c.start] = [];
+        acc[c.start].push(c.map_e);
+        return acc;
+      }, {} as { [key: string]: string[] });
 
-      //add map nodes
-      start.connections = connections.map((c) => c.map as MapNode);
-      setSelectedLocation(start);
-      const initLocations = [start, ...start.connections];
-      setLocations(initLocations);
-      console.log(initLocations);
+      //now iterate over all map objects and add the connections
+      const mapNodes = map.map((m) => {
+        const connections = graph[m.id] ?? [];
+        return { ...m, connections: connections.map((c: any) => c as MapNode) };
+      });
+      setSelectedLocation(mapNodes[0]);
+      setLocations(mapNodes);
     };
-    getMap();
+
+    createMap();
   }, []);
 
   const handleVisitLocation = async (location: MapNode) => {

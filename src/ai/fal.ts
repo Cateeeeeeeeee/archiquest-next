@@ -12,8 +12,17 @@ type Image = {
   file_name: string;
   file_size: number;
 };
+
 type Result = {
   images: Image[];
+};
+
+type UpscaleResult = {
+  image: Image;
+};
+
+type VideoResult = {
+  video: Image;
 };
 
 // This function makes a request to the FAL api and gets an image.
@@ -24,12 +33,12 @@ export async function generateImageFal(
     | "fast-turbo-diffusion"
     | "hyper-sdxl"
     | "fast-sdxl" = "fast-turbo-diffusion",
-  negativePrompt: string = "cartoon, illustration, animation, face, male, female, ugly"
+  negative_prompt: string = "cartoon, illustration, animation, face, male, female, ugly"
 ) {
   const result: Result = await fal.run(`fal-ai/${model}`, {
     input: {
       prompt: prompt,
-      negativePrompt: negativePrompt,
+      negative_prompt: negative_prompt,
       image_size: image_size,
       sync_mode: true,
     },
@@ -53,7 +62,58 @@ export async function generateImageToImageFal(
       strength: 0.99,
       sync_mode: true,
       seed: generationSeed,
+      negative_prompt:
+        "cartoon, illustration, animation, face, male, female, ugly",
     },
   });
   return result.images[0].url;
+<<<<<<< HEAD
 }
+=======
+}
+
+export type UpscaleOptions = {
+  prompt?: string;
+  scale?: number;
+  creativity?: number;
+  detail?: number;
+  shape_preservation?: number;
+  num_inference_steps?: number;
+  skip_ccsr?: boolean;
+};
+
+// This function makes a request to the FAL api and gets an image.
+export async function creativeUpscale(
+  image_url: string,
+  options: UpscaleOptions = {
+    scale: 2,
+    creativity: 0.5,
+    detail: 1,
+    shape_preservation: 0.5,
+    num_inference_steps: 10,
+  }
+) {
+  const result: UpscaleResult = await fal.run(`fal-ai/creative-upscaler`, {
+    input: {
+      image_url: image_url,
+      ...options,
+    },
+  });
+
+  //read result.image.url; and return base64 string
+  return result.image.url;
+}
+
+// This function makes a request to the FAL api and gets an image.
+export async function generateVideoFal(image_url: string, steps: number = 2) {
+  const result: VideoResult = await fal.run(`fal-ai/fast-svd-lcm`, {
+    input: {
+      image_url: image_url,
+      steps: steps,
+    },
+  });
+
+  //read result.image.url; and return base64 string
+  return result.video.url;
+}
+>>>>>>> 4588ef5bbb750c41fc417d06a9f68644bccbf693

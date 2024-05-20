@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import * as fal from "@fal-ai/serverless-client";
-import BlendImage from "@/components/BlendImage";
+import Blend, { BlendImage } from "@/components/Blend";
 
 fal.config({
   proxyUrl: "/api/fal/proxy",

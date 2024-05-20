@@ -1,6 +1,7 @@
 "use server";
 import OpenAI from "openai";
 import { LLMRequest } from "./types";
+import { ImageGenerateParams } from "openai/resources/images.mjs";
 
 const openai_key = process.env.OPENAI;
 
@@ -40,4 +41,17 @@ export async function getOpenAICompletion(
   return (
     completion.choices[0]?.message?.content || "Oops, something went wrong."
   );
+}
+
+export async function generateImageDalle(
+  prompt: string,
+  model: string,
+  size: ImageGenerateParams["size"] = "1024x1024"
+) {
+  const img = await openai.images.generate({
+    model: model,
+    prompt: prompt,
+    size: size,
+  });
+  return img.data[0].url;
 }

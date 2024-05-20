@@ -75,7 +75,7 @@ export default function AgentsPage() {
   return (
     <main className="flex min-h-screen flex-col items-end justify-between p-24">
       <div className="z-10 max-w-lg w-full items-center justify-between font-mono text-sm lg:flex">
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full bg-white p-4 rounded-lg">
           <div>
             {Object.keys(resources).map((key) => (
               <div className="flex justify-between" key={key}>
@@ -93,6 +93,7 @@ export default function AgentsPage() {
                 imageSize="landscape_16_9"
                 animate={0}
                 fullscreen={true}
+                video={true}
               />
             </>
           )}

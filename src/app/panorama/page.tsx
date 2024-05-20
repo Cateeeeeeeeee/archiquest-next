@@ -1,8 +1,14 @@
 "use client";
 import { getPanorama } from "@/ai/blockade";
-import { generateImageFal } from "@/ai/fal";
+import {
+  creativeUpscale,
+  generateImageFal,
+  generateImageToImageFal,
+} from "@/ai/fal";
+import { getGeminiVision } from "@/ai/gemini";
 import { getOpenAICompletion } from "@/ai/openai";
 import Panorama from "@/components/Panorama";
+import Spinner from "@/components/Spinner";
 import { useState } from "react";
 
 export default function App() {
@@ -14,6 +20,8 @@ export default function App() {
     "Hold shift and drag to screencap"
   );
   const [immersive, setImmersive] = useState<boolean>(false);
+  const [upscaling, setUpscaling] = useState<boolean>(false);
+  const [upscale, setUpscale] = useState<boolean>(true);
 
   const handleCreate = async () => {
     setFetching(true);
@@ -21,25 +29,36 @@ export default function App() {
     const pano = await (immersive
       ? getPanorama(prompt)
       : generateImageFal(prompt, "landscape_16_9"));
-
     if (pano) setImg(pano);
     setFetching(false);
   };
 
   const handleSelect = async (imgUrl: string) => {
-    //Do whatever you want with the selected region of the image here
-    //E.g. send to openAI and ask questions about it
-    //or send to an image upscaler with FAL etc
-    const description = await getOpenAICompletion(
-      "briefly describe the image.",
-      128,
-      "",
-      false,
-      imgUrl
-    );
-
-    setDescription(description);
     setSelectedImage(imgUrl);
+    setUpscaling(true);
+
+    if (!upscale) {
+      //Generate a description
+      //Use this with image - image
+      const description = await getGeminiVision(
+        `You will be provided with a screenshot from an image of ${prompt}. Vividly describe the content in the image in as much detail as possible. Your description will be used as a prompt to generate a new image, so avoid negative words like blurry, low res, unclear, etc.`,
+        imgUrl
+      );
+      setDescription(description);
+      const pano = await generateImageToImageFal(description, imgUrl, true);
+      if (pano) setImg(pano);
+    } else {
+      //Otherwise just upscale
+      const upscaled = await creativeUpscale(imgUrl);
+      setSelectedImage(upscaled);
+      try {
+        const base64 = await convertImageToBase64JPEG(upscaled);
+        setImg(base64);
+      } catch (e) {
+        console.error("error creating new pano", e);
+      }
+    }
+    setUpscaling(false);
   };
 
   return (
@@ -64,18 +83,65 @@ export default function App() {
           >
             {immersive ? "Skybox (slow)" : "Flat (fast)"}
           </button>
-          <div className="fixed bottom-0 left-0 p-4">
-            <img src={selectedImg} />
-          </div>
+          <button
+            className="p-2 w-full rounded bg-white"
+            onClick={() => setUpscale(!upscale)}
+          >
+            {upscale ? "Upscaling (slow)" : "Image-to-Image (fast)"}
+          </button>
         </div>
         <div className="relative w-full h-full">
           <Panorama img={img} onSelect={handleSelect} immersive={immersive} />
           <div className="absolute top-0 left-0 p-4 flex flex-col max-w-sm">
             <p className="text-xs bg-white p-2">{description}</p>
-            <img src={selectedImg} />
+            <div className="relative">
+              {selectedImg && (
+                <img className="w-full h-full" src={selectedImg} />
+              )}
+              {upscaling && (
+                <div className="absolute inset-0 flex justify-center items-center">
+                  <Spinner />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
     </>
   );
+<<<<<<< HEAD
 }
+=======
+}
+
+async function convertImageToBase64JPEG(url: string) {
+  try {
+    // Create an HTMLImageElement
+    const img = new Image();
+    img.src = url;
+    img.crossOrigin = "anonymous";
+    return new Promise<string>((resolve, reject) => {
+      img.onload = () => {
+        // Draw the image on a canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+
+        // Convert the canvas to a base64 JPEG
+        const jpegBase64 = canvas.toDataURL("image/jpeg");
+        resolve(jpegBase64);
+      };
+
+      img.onerror = (error) => {
+        reject(error);
+      };
+    });
+  } catch (error) {
+    console.error("Error converting image:", error);
+    throw error;
+  }
+}
+>>>>>>> 4588ef5bbb750c41fc417d06a9f68644bccbf693

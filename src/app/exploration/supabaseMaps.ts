@@ -52,3 +52,14 @@ export async function getConnectedLocations(id: string, start: boolean = true) {
     .eq(`${start ? "start" : "end"}`, id);
   return connections;
 }
+
+export async function getMap() {
+  let { data: map, error } = await supabase
+    .from("map")
+    .select("*")
+    .order("created_at", { ascending: false });
+  let { data: connections, error: connectionError } = await supabase
+    .from("connections")
+    .select("*, map_s:start(*), map_e:end(*)");
+  return { map, connections };
+}

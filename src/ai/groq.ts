@@ -7,12 +7,14 @@ const groq = new Groq({
   apiKey: groq_key,
 });
 
+type GroqModel = "llama3-70b-8192" | "llama3-8b-8192" | "mixtral-8x7b-32768";
 //We can call the Groq API and pass our user prompt, max tokens and system prompt.
 export async function getGroqCompletion(
   userPrompt: string,
   max_tokens: number,
   systemPrompt: string = "",
-  jsonOnly: boolean = false
+  jsonOnly: boolean = false,
+  model: GroqModel = "llama3-70b-8192"
 ) {
   const body = {
     messages: [
