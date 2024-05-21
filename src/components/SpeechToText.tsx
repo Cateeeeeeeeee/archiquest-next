@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import * as fal from "@fal-ai/serverless-client";
 import Spinner from "./Spinner";
 
@@ -7,9 +7,12 @@ fal.config({
   proxyUrl: "/api/fal/proxy",
 });
 
-export default function SpeechToText() {
+export default function SpeechToText({
+  onTranscribed,
+}: {
+  onTranscribed?: (transcription: string) => void;
+}) {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -38,6 +41,7 @@ export default function SpeechToText() {
       })) as any;
       console.log(transcribeAudio);
       setTranscription(transcribeAudio.text);
+      onTranscribed?.(transcribeAudio.text);
       setIsTranscribing(false);
     };
 

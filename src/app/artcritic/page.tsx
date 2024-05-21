@@ -9,7 +9,7 @@ import { getGeminiVision } from "@/ai/gemini";
 import GenerateTagCloud from "@/components/TagCloud";
 import { saveArtwork } from "./supabaseArt";
 import TextToSpeech from "@/components/TextToSpeech";
-import Blend, { BlendImage } from "@/components/Blend";
+import Blend from "@/components/Blend";
 
 type Artwork = {
   description: string;
@@ -40,7 +40,7 @@ export default function ArtcriticPage() {
 
     setDescription(description);
     //create the image
-    const imageUrl = await generateImageFal(description, "landscape_16_9");
+    const imageUrl = await generateImageFal(description);
     setImageUrl(imageUrl);
 
     setMessage("Valuing artwork...");
@@ -109,7 +109,11 @@ export default function ArtcriticPage() {
               />
             )}
 
-            {imageUrl && <BlendImage src={imageUrl} fullscreen />}
+            {imageUrl && (
+              <Blend contentKey={imageUrl.substring(-20)}>
+                <img className="w-full  h-full  object-cover" src={imageUrl} />
+              </Blend>
+            )}
           </div>
           <ImageGallery
             images={artworks.map((a) => ({ src: a.imageUrl, title: a.score }))}

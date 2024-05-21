@@ -1,26 +1,26 @@
-import { ReactNode, useEffect, useState } from "react";
+import { Athiti } from "next/font/google";
+import React, { ReactNode } from "react";
+import { CrossFade } from "react-crossfade-simple";
 
-type BlendImageProps = {
-  component: ReactNode;
-  fullscreen: boolean;
-};
+const animations = [
+  "animate-panR",
+  "animate-zoomIn",
+  "animate-panL",
+  "animate-zoomOut",
+];
 
 //blends and animate an new component over the top of any previously rendered component
-export default function Blend({ component, fullscreen }: BlendImageProps) {
-  const [currentComponent, setCurrentComponent] = useState<ReactNode | null>(
-    null
-  );
-  const [nextComponent, setNextComponent] = useState<ReactNode | null>(null);
-
-  useEffect(() => {
-    setNextComponent(component);
-    const timeout = setTimeout(() => {
-      setCurrentComponent(component);
-      setNextComponent(null);
-    }, 1000); // Delay for the fade effect to complete
-    return () => clearTimeout(timeout);
-  }, [component]);
-
+export default function Blend({
+  fullscreen = true,
+  children,
+  contentKey,
+  duration = 2000,
+}: {
+  fullscreen?: boolean;
+  children: ReactNode;
+  contentKey: string;
+  duration?: number;
+}) {
   return (
     <div
       className={`${
@@ -29,45 +29,22 @@ export default function Blend({ component, fullscreen }: BlendImageProps) {
           : `relative max-w-full w-[1024px] h-[600px] overflow-hidden`
       }`}
     >
-      {currentComponent && (
-        <div
-          className={`${
-            fullscreen && "absolute top-0 left-0"
-          } w-full h-full animate-scale `}
-        >
-          <div
-            className={`${fullscreen && "absolute top-0 left-0"} w-full h-full`}
-          >
-            {currentComponent}
-          </div>
-          <div
-            className={`${
-              fullscreen && "absolute top-0 left-0"
-            } w-full h-full transition-opacity duration-1000 ease-in-out`}
-            style={{
-              opacity: nextComponent ? 1 : 0,
-              zIndex: nextComponent ? "10" : "-10",
-            }}
-          >
-            {nextComponent}
-          </div>
-        </div>
-      )}
+      <div className={`${fullscreen && "absolute top-0 left-0"} w-full h-full`}>
+        <CrossFade contentKey={contentKey} timeout={duration}>
+          {children}
+        </CrossFade>
+      </div>
     </div>
   );
 }
 
-export function BlendImage({
-  src,
-  fullscreen,
-}: {
-  src: string;
-  fullscreen: boolean;
-}) {
+export function AnimatedImage({ src }: { src: string }) {
   return (
-    <Blend
-      component={<img className="w-full  h-full  object-cover" src={src} />}
-      fullscreen={fullscreen}
+    <img
+      className={`w-full h-full object-cover ${
+        animations[Math.floor(Math.random() * animations.length)]
+      }`}
+      src={src}
     />
   );
 }

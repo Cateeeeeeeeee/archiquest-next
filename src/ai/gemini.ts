@@ -8,9 +8,13 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI ?? "");
 
 export async function getGeminiVision(
   prompt: string,
-  base64Image: string | undefined = undefined
+  base64Image: string | undefined = undefined,
+  systemPrompt: string = ""
 ) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash-latest",
+    systemInstruction: systemPrompt,
+  });
   const body = [prompt] as any[];
   if (base64Image) {
     const formatted = base64Image.split(",")[1];

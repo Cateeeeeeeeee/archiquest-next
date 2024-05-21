@@ -40,8 +40,9 @@ export default function TimelapsePage() {
           <Animation
             prompt={`${keywords}, year ${year.toString()}`}
             systemPrompt={describeImagePrompt}
-            imageSize="landscape_16_9"
-            animate={animateImages ? 5000 : 0}
+            width={1344}
+            height={1024}
+            refreshRate={animateImages ? 5000 : 0}
             fullscreen={fullscreen}
             onChange={(url) => setYear((year) => year + 5)}
           />
