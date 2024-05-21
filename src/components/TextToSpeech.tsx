@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type AuraModel =
+export type AuraModel =
   | "aura-asteria-en"
   | "aura-luna-en"
   | "aura-stella-en"
@@ -19,13 +19,16 @@ export default function TextToSpeech({
   model = "aura-helios-en",
   showControls,
   autoPlay,
+  handleEnded,
 }: {
   text: string;
   model?: AuraModel;
   showControls: boolean;
   autoPlay: boolean;
+  handleEnded?: () => void;
 }) {
   const [audioURL, setAudioURL] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     const generateAudio = async () => {
@@ -44,16 +47,18 @@ export default function TextToSpeech({
       const audioUrl = await getAudioUrl(response.body);
       setAudioURL(audioUrl);
     };
-    if (text !== "") generateAudio();
+    if (text && text !== "") generateAudio();
   }, [text]);
 
   if (!audioURL) return <div>Loading...</div>;
   return (
     <audio
+      ref={audioRef}
       className="w-full p-2"
       src={audioURL}
       controls={showControls}
       autoPlay={autoPlay}
+      onEnded={handleEnded}
     />
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import Blend, { BlendImage } from "@/components/Blend";
+import Blend from "@/components/Blend";
 import SketchToImage from "@/components/SketchToImage";
 import { useState } from "react";
 
@@ -23,7 +23,9 @@ export default function Page() {
             onChange={(e) => setPrompt(e.target.value)}
           />
           <SketchToImage prompt={prompt} onCreate={onCreate} />
-          <BlendImage src={image} fullscreen />
+          <Blend contentKey={image.substring(-20)}>
+            <img className="w-full  h-full  object-cover" src={image} />
+          </Blend>
         </div>
       </div>
     </main>

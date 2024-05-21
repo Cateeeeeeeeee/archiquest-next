@@ -1,14 +1,15 @@
 import { generateImageFal, generateVideoFal } from "@/ai/fal";
 import { getGroqCompletion } from "@/ai/groq";
-import { ReactNode, useEffect, useRef, useState } from "react";
-import Blend, { BlendImage } from "./Blend";
+import { useEffect, useState } from "react";
+import Blend, { AnimatedImage } from "./Blend";
 
 type AnimationProps = {
   prompt: string;
   systemPrompt: string;
-  imageSize: "landscape_16_9" | "square";
-  animate: number;
-  fullscreen: boolean;
+  width: number;
+  height: number;
+  refreshRate?: number;
+  fullscreen?: boolean;
   onChange?: (url: string) => void;
   video?: boolean;
 };
@@ -18,9 +19,10 @@ type AnimationProps = {
 export default function Animation({
   prompt,
   systemPrompt,
-  imageSize,
-  animate,
-  fullscreen,
+  width,
+  height,
+  refreshRate = 0,
+  fullscreen = true,
   onChange,
   video = false,
 }: AnimationProps) {
@@ -28,14 +30,23 @@ export default function Animation({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    async function generateDescription() {
+      return await getGroqCompletion(prompt, 32, systemPrompt);
+    }
     async function generateImage() {
-      const imageDescription = await getGroqCompletion(
-        prompt,
-        64,
-        systemPrompt
+      //improve image description
+      const imageDescription = await generateDescription();
+      console.log(
+        imageDescription +
+          " Canon EOS 5D Mark IV, 24mm, f/8, 1/250s, ISO 100, 2019"
       );
-      const url = await generateImageFal(imageDescription, imageSize);
-      return url;
+      const url = await generateImageFal(
+        imageDescription +
+          " Canon EOS 5D Mark IV, 24mm, f/8, 1/250s, ISO 100, 2019",
+        { width: width, height: height },
+        "hyper-sdxl"
+      );
+      return { imageDescription, url };
     }
 
     async function generateVideo(url: string) {
@@ -43,45 +54,56 @@ export default function Animation({
       return videoUrl;
     }
 
-    if (animate === 0) {
-      generateImage().then((url) => {
-        setImage(url);
+    if (refreshRate === 0) {
+      generateImage().then((img) => {
+        setImage(img.url);
         setVideoUrl(null);
-        console.log("generating video");
-        if (video && url)
-          generateVideo(url).then((videoUrl) => {
-            console.log("got video", videoUrl);
+        if (video && img.url)
+          generateVideo(img.url).then((videoUrl) => {
             setVideoUrl(videoUrl);
           });
       });
     } else {
       const interval = setInterval(async () => {
-        const url = await generateImage();
+        const { url } = await generateImage();
         setImage(url); // Set new image
         if (onChange) onChange(url);
-      }, animate);
+      }, refreshRate);
 
       return () => clearInterval(interval); // Cleanup
     }
-  }, [prompt, animate, systemPrompt, imageSize, onChange, video]);
+  }, [prompt, refreshRate, systemPrompt, width, height, video, onChange]);
 
   return (
     <Blend
-      component={
-        videoUrl ? (
-          <video
-            poster={image ?? ""}
-            src={videoUrl}
-            autoPlay
-            className="w-full h-full object-cover"
-            muted
-            loop
-          />
-        ) : (
-          <img className="w-full  h-full  object-cover" src={image ?? ""} />
-        )
-      }
+      contentKey={image?.substring(-20) ?? videoUrl ?? ""}
       fullscreen={fullscreen}
-    />
+      duration={2000}
+    >
+      {videoUrl ? (
+        <VideoComponent image={image ?? ""} videoUrl={videoUrl} />
+      ) : (
+        <AnimatedImage src={image ?? ""} />
+      )}
+    </Blend>
   );
 }
+
+const VideoComponent = ({
+  image,
+  videoUrl,
+}: {
+  image: string;
+  videoUrl: string;
+}) => {
+  return (
+    <video
+      poster={image ?? ""}
+      src={videoUrl}
+      autoPlay
+      className="w-full h-full object-cover"
+      muted
+      loop={false}
+    />
+  );
+};
