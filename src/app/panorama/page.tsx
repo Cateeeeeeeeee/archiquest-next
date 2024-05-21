@@ -25,10 +25,15 @@ export default function App() {
 
   const handleCreate = async () => {
     setFetching(true);
+    //improve prompt
+    const newPrompt =
+      "A photograph of" +
+      prompt +
+      ". Canon EOS 5D Mark IV, 24mm, f/8, 1/250s, ISO 100, 2019";
     //if immersive, use blockade, otherwise just use fal
     const pano = await (immersive
-      ? getPanorama(prompt)
-      : generateImageFal(prompt, "landscape_16_9"));
+      ? getPanorama(newPrompt)
+      : generateImageFal(newPrompt));
     if (pano) setImg(pano);
     setFetching(false);
   };
@@ -109,9 +114,6 @@ export default function App() {
       </main>
     </>
   );
-<<<<<<< HEAD
-}
-=======
 }
 
 async function convertImageToBase64JPEG(url: string) {
@@ -144,4 +146,3 @@ async function convertImageToBase64JPEG(url: string) {
     throw error;
   }
 }
->>>>>>> 4588ef5bbb750c41fc417d06a9f68644bccbf693

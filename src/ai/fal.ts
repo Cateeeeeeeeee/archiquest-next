@@ -28,7 +28,7 @@ type VideoResult = {
 // This function makes a request to the FAL api and gets an image.
 export async function generateImageFal(
   prompt: string,
-  image_size: string,
+  image_size: { width: number; height: number } = { width: 512, height: 576 },
   model:
     | "fast-turbo-diffusion"
     | "hyper-sdxl"
@@ -41,8 +41,10 @@ export async function generateImageFal(
       negative_prompt: negative_prompt,
       image_size: image_size,
       sync_mode: true,
+      num_inference_steps: 4,
     },
   });
+
   return result.images[0].url;
 }
 
@@ -67,9 +69,6 @@ export async function generateImageToImageFal(
     },
   });
   return result.images[0].url;
-<<<<<<< HEAD
-}
-=======
 }
 
 export type UpscaleOptions = {
@@ -110,10 +109,10 @@ export async function generateVideoFal(image_url: string, steps: number = 2) {
     input: {
       image_url: image_url,
       steps: steps,
+      fps: 5,
     },
   });
 
   //read result.image.url; and return base64 string
   return result.video.url;
 }
->>>>>>> 4588ef5bbb750c41fc417d06a9f68644bccbf693
