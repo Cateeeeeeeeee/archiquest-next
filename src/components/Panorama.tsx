@@ -1,12 +1,14 @@
 "use client";
+
 import { Canvas, useThree } from "@react-three/fiber";
 import {
   Environment,
   OrbitControls,
   PerspectiveCamera,
 } from "@react-three/drei";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SelectionArea } from "./SelectImageRegion";
+
 export default function Panorama({
   img,
   onSelect,
@@ -27,7 +29,8 @@ export default function Panorama({
   const [finalSelection, setFinalSelection] = useState<SelectionArea | null>(
     null
   );
-  const [controlsDisabled, setControlsDisabled] = useState(false);
+  const selectionBoxRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleWheel = (deltaY: number) => {
     setFov((prevFov) => {
@@ -38,9 +41,11 @@ export default function Panorama({
   };
 
   const handleMouseDown = (e: any) => {
-    setIsSelecting(true);
-    const { offsetX, offsetY } = e.nativeEvent;
-    setSelection({ x: offsetX, y: offsetY, width: 0, height: 0 });
+    if (e.shiftKey) {
+      setIsSelecting(true);
+      const { offsetX, offsetY } = e.nativeEvent;
+      setSelection({ x: offsetX, y: offsetY, width: 0, height: 0 });
+    }
   };
 
   const handleMouseMove = (e: any) => {
@@ -56,24 +61,36 @@ export default function Panorama({
 
   const handleMouseUp = () => {
     setIsSelecting(false);
-    if (controlsDisabled) setFinalSelection(selection);
+    setFinalSelection(selection);
   };
+
+  useEffect(() => {
+    if (isSelecting && selectionBoxRef.current && canvasRef.current) {
+      const { x, y, width, height } = selection;
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      selectionBoxRef.current.style.left = `${canvasRect.left + x}px`;
+      selectionBoxRef.current.style.top = `${canvasRect.top + y}px`;
+      selectionBoxRef.current.style.width = `${width}px`;
+      selectionBoxRef.current.style.height = `${height}px`;
+      selectionBoxRef.current.style.display = "block";
+    } else if (selectionBoxRef.current) {
+      selectionBoxRef.current.style.display = "none";
+    }
+  }, [isSelecting, selection]);
 
   return (
     <>
       <Canvas
+        ref={canvasRef}
         onWheel={(e) => handleWheel(e.deltaY)}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onKeyDown={(e) => setControlsDisabled(e.key == "Shift")}
-        onKeyUp={(e) => setControlsDisabled(false)}
         tabIndex={0}
         gl={{ preserveDrawingBuffer: true }}
       >
         <Environment files={img} background />
         <OrbitControls
-          enabled={!controlsDisabled}
           target={[1, 0, 0]}
           maxPolarAngle={immersive ? Math.PI : Math.PI - Math.PI / 3}
           minPolarAngle={immersive ? 0 : Math.PI / 3}
@@ -86,6 +103,15 @@ export default function Panorama({
         <PerspectiveCamera makeDefault position={[0, 0, 0]} fov={fov} />
         <SelectionHandler selectionArea={finalSelection} onSelect={onSelect} />
       </Canvas>
+      <div
+        ref={selectionBoxRef}
+        style={{
+          position: "absolute",
+          border: "2px dashed white",
+          pointerEvents: "none",
+          display: "none",
+        }}
+      ></div>
     </>
   );
 }

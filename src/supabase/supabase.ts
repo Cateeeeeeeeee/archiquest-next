@@ -9,8 +9,11 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const saveScore = async (name: string, score: number, panorama: string) => {
-  const { data, error } = await supabase.from('scores').insert([{ name, score, panorama }]).select();
+export const saveScore = async (name: string, score: number) => {
+  const { data, error } = await supabase
+    .from('scores')
+    .insert([{ name, score }])
+    .select();
 
   if (error) {
     console.error('Error saving score:', error);

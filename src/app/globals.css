@@ -15,3 +15,11 @@ body {
     text-wrap: balance;
   }
 }
+@font-face {
+  font-family: 'Old English Text MT';
+  src: url('/fonts/OldEnglishTextMT.ttf') format('truetype');
+}
+
+.font-old-english {
+  font-family: 'Old English Text MT', serif;
+}

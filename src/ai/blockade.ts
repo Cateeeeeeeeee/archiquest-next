@@ -28,13 +28,13 @@ export async function getPanorama(prompt: string, style_id: number = 119) {
 
   //poll https://backend.blockadelabs.com/api/v1/imagine/requests/ every 5s until file_url is not ""
   let file_url = null;
-  let retries = 10;
+  let retries = 15;
 
   while (!file_url && retries > 0) {
     retries = retries - 1;
 
     console.log("waiting for 4s");
-    await new Promise((resolve) => setTimeout(resolve, 4000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     console.log("polling status");
     const response = await fetch(

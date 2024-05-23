@@ -1,4 +1,5 @@
 "use client";
+
 import { getPanorama } from "@/ai/blockade";
 import {
   creativeUpscale,
@@ -11,7 +12,8 @@ import Panorama from "@/components/Panorama";
 import Spinner from "@/components/Spinner";
 import { useState, useEffect, useRef } from "react";
 import { saveScore } from "@/supabase/supabase";
-import { useRouter } from 'next/navigation';
+import EndPage from "./endpage";
+import { getGroqCompletion } from "@/ai/groq";
 
 const prompts = [
   "A dense tropical rainforest with towering trees, thick undergrowth, and a variety of colorful plants. The air is humid, and sunlight filters through the canopy, creating dappled patterns on the forest floor. Exotic birds, insects, and small mammals can be seen in their natural habitat.",
@@ -20,19 +22,19 @@ const prompts = [
 ];
 
 const musicUrls = [
-  'https://s19.aconvert.com/convert/p3r68-cdx67/b85wk-o00tp.mp3',
-  'https://s27.aconvert.com/convert/p3r68-cdx67/5dc3c-bc6lh.mp3',
-  'https://s31.aconvert.com/convert/p3r68-cdx67/jgsgo-fc1ex.mp3',
+  'audio/CanopyWhispers.mp3',
+  'audio/CoralSerenity.mp3',
+  'audio/RainforestRhapsody.mp3',
 ];
 
 export default function App() {
   const [fetching, setFetching] = useState<boolean>(false);
-  const [img, setImg] = useState<string>("/M3_Photoreal_hdri-hdr_A_dense_tropical_rainforest_1345358637_11062534.hdr");
+  const [sceneImg, setSceneImg] = useState<string>("/M3_Photoreal_hdri-hdr_A_dense_tropical_rainforest_1345358637_11062534.hdr");
+  const [nextSceneImage, setNextSceneImage] = useState<string>();
+  const [upscaledImg, setUpscaledImg] = useState<string>("");
   const [prompt, setPrompt] = useState<string>(prompts[0]);
-  const [selectedImg, setSelectedImage] = useState<string>("");
-  const [description, setDescription] = useState<string>(
-    "Hold shift and drag to explore"
-  );
+  const [description, setDescription] = useState<string>("Hold shift and drag to explore");
+  const [placeholderVisible, setPlaceholderVisible] = useState<boolean>(false);
   const [upscaling, setUpscaling] = useState<boolean>(false);
   const [backpack, setBackpack] = useState<string[]>([]);
   const [showBackpack, setShowBackpack] = useState<boolean>(false);
@@ -42,12 +44,13 @@ export default function App() {
   const [score, setScore] = useState<number>(0);
   const [selectCount, setSelectCount] = useState<number>(0);
   const [countdown, setCountdown] = useState<number>(120);
-  const router = useRouter();
+  const [showEndPage, setShowEndPage] = useState<boolean>(false);
 
   const backpackRef = useRef<HTMLDivElement>(null);
   const discoveriesRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Handle clicking outside to close the backpack and discovery window
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -66,7 +69,7 @@ export default function App() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    
+
     const timer = setInterval(() => {
       setCountdown((prevCountdown) => prevCountdown - 1);
     }, 1000);
@@ -78,10 +81,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (img === "") {
+    if (sceneImg === "") {
       handleCreate();
     }
-  }, [img]);
+    makeNextImage();
+  }, [sceneImg]);
+
+  const makeNextImage = async () => {
+    const newPrompt =
+      "A photograph of " +
+      prompt +
+      ", possibly containing rare and exotic creatures. Canon EOS 5D Mark IV, 24mm, f/8, 1/250s, ISO 100, 2019";
+    const pano = await getPanorama(newPrompt);
+
+    if (pano) {
+      setNextSceneImage(pano);
+      console.log("got pano");
+    }
+  }
 
   useEffect(() => {
     if (audioRef.current) {
@@ -90,6 +107,7 @@ export default function App() {
     }
   }, [prompt]);
 
+  //Save the score when the countdown ends
   useEffect(() => {
     if (countdown === 0) {
       handleSaveScore();
@@ -97,39 +115,57 @@ export default function App() {
   }, [countdown]);
 
   const handleCreate = async () => {
+    if(nextSceneImage){
+      setSceneImg(nextSceneImage);
+      return;
+    }
     setFetching(true);
     const newPrompt =
       "A photograph of " +
       prompt +
       ", possibly containing rare and exotic creatures. Canon EOS 5D Mark IV, 24mm, f/8, 1/250s, ISO 100, 2019";
     const pano = await generateImageFal(newPrompt);
-    if (pano) setImg(pano);
+    if (pano) setSceneImg(pano);
     setFetching(false);
   };
 
+  // Process the selected image
   const handleSelect = async (imgUrl: string) => {
-    setSelectedImage(imgUrl);
+    setPlaceholderVisible(true);
     setUpscaling(true);
+    setUpscaledImg(imgUrl);
     setSpeciesAnalysis("");
 
-    const upscaled = await creativeUpscale(imgUrl);
-    setSelectedImage(upscaled);
+    const upscaled = await creativeUpscale(imgUrl, {
+      prompt: `You will be provided with an image of ${prompt}. Upscale the image, focusing on exotic birds, insects, small mammals, highly detailed, high resolution, sharp.`,
+    });
+    setUpscaledImg(upscaled);
     try {
       const base64 = await convertImageToBase64JPEG(upscaled);
-      setImg(base64);
       setBackpack([...backpack, base64]);
 
       const analysis = await getGeminiVision(
         `You will be provided with an image of ${prompt}. Identify and list the species of any creatures or plants present in the image. If no specific species can be identified, provide a general description of the types of creatures or plants visible.`,
         base64
       );
+
+
+      const scoreText = await getGroqCompletion(speciesAnalysis, 128, `
+      You are a scoring bot in a photography game where the goal is to discover new species of animal. 
+      The user will provide you with an analysis of their latest photo, including whether the photo contains any animals. 
+      Award points for the number of species in the photo.
+      Award more points for rare and exotic species, or species that are small and hard see. 
+      Deduct points if the image contains no animals or is described as unintesting. 
+      Return your response in JSON in the following format {species: string, score: number}
+      `, true);
+
+      const scoreJSON = JSON.parse(scoreText);
+
+      // const score = calculateScore(analysis);
+      setScore(prevScore => prevScore + scoreJSON.score);
       setSpeciesAnalysis(analysis);
-
-      const score = calculateScore(analysis);
-      setScore(prevScore => prevScore + score);
-
       if (score > 0) {
-        setDiscoveries(prevDiscoveries => [...prevDiscoveries, `${analysis} (${score} points)`]);
+        setDiscoveries(prevDiscoveries => [...prevDiscoveries, `${scoreJSON.species} (${score} points)`]);
       } else {
         setDiscoveries(prevDiscoveries => [...prevDiscoveries, "No clear animals or insects found."]);
       }
@@ -140,67 +176,91 @@ export default function App() {
     setSelectCount(prevCount => prevCount + 1);
     setUpscaling(false);
 
-    if (selectCount === 2) {
+    if (selectCount === 1) {
       setSelectCount(0);
       const currentIndex = prompts.indexOf(prompt);
       if (currentIndex < prompts.length - 1) {
         setPrompt(prompts[currentIndex + 1]);
+        setPlaceholderVisible(false);
+        setUpscaledImg("");
+        setSpeciesAnalysis("");
       } else {
         handleSaveScore();
       }
     }
   };
 
+  //save score
   const handleSaveScore = async () => {
     const playerName = localStorage.getItem("playerName");
     if (playerName) {
-      await saveScore(playerName, score, img);
+      await saveScore(playerName, score);
     }
-    router.push("/");
+    setShowEndPage(true);
   };
 
   function calculateScore(analysis: string): number {
-    if (analysis.includes("animal") || analysis.includes("insect")) {
-      return 5; // 如果分析结果明确提到动物或昆虫,得5分
-    } else {
-      return 0; // 其他情况不得分
+    const animalKeywords = ["bird", "animal", "mammal", "insect"];
+    const absenceKeywords = ["no birds", "no animals", "no mammals", "no insects", "no exotic birds", "no exotic animals", "no exotic mammals", "no exotic insects"];
+
+    const hasAnimal = animalKeywords.some(keyword => analysis.toLowerCase().includes(keyword));
+    const hasAbsence = absenceKeywords.some(keyword => analysis.toLowerCase().includes(keyword));
+
+    let score = 0;
+    if (hasAnimal && !hasAbsence) {
+      score += 5; // Initial 5 points if animals are mentioned and their absence is not indicated
     }
+
+    // Find and score species marked with **
+    const speciesMatches = analysis.match(/\*\*([^*]+)\*\*/g);
+    if (speciesMatches) {
+      const uniqueSpecies = new Set(speciesMatches.map(match => match.toLowerCase()));
+      score += uniqueSpecies.size * 5; // 5 points for each unique species
+    }
+
+    return score;
   }
+
 
   return (
     <>
       <audio ref={audioRef} loop />
-      <main className="flex flex-col w-full h-screen min-h-screen">
+      <main className="flex flex-col w-full h-screen min-h-screen font-serif text-xl mb-2 rounded">
         <div className="flex justify-between gap-4 m-2">
           <button
             disabled={fetching}
-            className="p-2 w-full rounded bg-white"
+            className="p-2 w-full rounded bg-white "
             onClick={handleCreate}
           >
             {fetching ? "Exploring..." : "Explore new place"}
           </button>
         </div>
         <div className="relative w-full h-full">
-          <Panorama img={img} onSelect={handleSelect} immersive={false} />
+          <Panorama img={sceneImg} onSelect={handleSelect} immersive={true} />
           <div className="absolute top-0 left-0 p-4 flex flex-col max-w-sm">
-            <p className="text-xs bg-white p-2">{description}</p>
-            <div className="relative">
-              {selectedImg && (
-                <img className="w-full h-full" src={selectedImg} />
-              )}
-              {upscaling && (
-                <div className="absolute inset-0 flex justify-center items-center">
-                  <Spinner />
-                </div>
-              )}
-              {speciesAnalysis && (
-                <div className="absolute top-0 left-0 p-2 bg-white text-xs">
-                  <p>{speciesAnalysis}</p>
-                </div>
+            <p className="bg-white p-2">{description}</p>
+            <div className="relative bg-white w-full h-64 rounded">
+              {placeholderVisible && (
+                <>
+                  {upscaledImg ? (
+                    <>
+                      <img className="w-full h-full object-cover rounded" src={upscaledImg} />
+                      {speciesAnalysis && (
+                        <div className="p-2 bg-white/50">
+                          <p>{speciesAnalysis}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex justify-center items-center">
+                      <Spinner />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
-          <div className="fixed top-16 left-1/2 transform -translate-x-1/2 p-2 bg-white text-lg">
+          <div className="fixed top-16 left-1/2 transform -translate-x-1/2 p-2 bg-white rounded">
             <p>Score: {score}</p>
             <p>Time Left: {countdown}s</p>
           </div>
@@ -208,7 +268,7 @@ export default function App() {
             className="absolute top-0 right-0 m-4 p-2 bg-white rounded"
             onClick={() => setShowBackpack(!showBackpack)}
           >
-            Backpack ({backpack.length})
+            Photo Album ({backpack.length})
           </button>
           {showBackpack && (
             <div
@@ -233,7 +293,7 @@ export default function App() {
             className="absolute bottom-0 right-0 m-4 p-2 bg-white rounded"
             onClick={() => setShowDiscoveries(!showDiscoveries)}
           >
-         Discoveries ({discoveries.length})
+            Discoveries ({discoveries.length})
           </button>
           {showDiscoveries && (
             <div
@@ -250,6 +310,14 @@ export default function App() {
           )}
         </div>
       </main>
+      {showEndPage && (
+        <EndPage
+          playerName={localStorage.getItem("playerName") || ""}
+          score={score}
+          backpack={backpack}
+          onClose={() => setShowEndPage(false)}
+        />
+      )}
     </>
   );
 }
