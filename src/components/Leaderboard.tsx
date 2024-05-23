@@ -1,41 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "@/supabase/supabase";
-
-interface Score {
-  id: string;
-  name: string;
-  score: number;
-  panorama: string; // Add a new field for the panorama URL
-}
+import { getScores } from "@/supabase/supabase";
 
 export default function Leaderboard() {
-  const [scores, setScores] = useState<Score[]>([]);
+  const [scores, setScores] = useState([]);
 
   useEffect(() => {
     const fetchScores = async () => {
-      const { data } = await supabase.from("scores").select().order("score", { ascending: false });
-      setScores(data as Score[]);
+      const data = await getScores();
+      setScores(data);
     };
-
     fetchScores();
   }, []);
 
-  const shareScore = (score: Score) => {
-    // Share the score and panorama on social media
-    const shareUrl = `https://yourgame.com/share?score=${score.score}&panorama=${encodeURIComponent(score.panorama)}`;
-    window.open(shareUrl, "_blank");
-  };
-
   return (
-    <div>
-      <h2>Leaderboard</h2>
-      {scores.map((score) => (
-        <div key={score.id}>
-          {score.name}: {score.score}{" "}
-          <button onClick={() => shareScore(score)}>Share</button>
-        </div>
-      ))}
+    <div className="bg-white p-4 rounded shadow">
+      <h2 className="text-2xl font-bold mb-4">Score board</h2>
+      <ul>
+        {scores.map((score, index) => (
+          <li key={score.id} className="mb-2">
+            {index + 1}. {score.name}: {score.score}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
