@@ -175,7 +175,7 @@ export default function App() {
       if (score > 0) {
         setDiscoveries(prevDiscoveries => [...prevDiscoveries, `${scoreJSON.species} (${score} points)`]);
       } else {
-        setDiscoveries(prevDiscoveries => [...prevDiscoveries, "No clear animals or insects found."]);
+        setDiscoveries(prevDiscoveries => [...prevDiscoveries, "No clear animals found."]);
       }
     } catch (e) {
       console.error("error creating new pano", e);
