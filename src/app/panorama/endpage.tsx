@@ -40,12 +40,12 @@ export default function EndPage({ playerName, score, backpack, onClose }: EndPag
             className="ml-4 bg-green-800 hover:bg-green-900 text-white font-bold py-2 px-4 rounded"
             onClick={handleBackpackClick}
           >
-            {showBackpack ? 'Close Backpack' : 'View Backpack'}
+            {showBackpack ? 'Close Photo Album' : 'View Photo Album'}
           </button>
         </div>
         {showBackpack && backpack.length > 0 && (
           <div className="mt-8">
-            <h3 className="text-xl font-bold mb-4">Backpack</h3>
+            <h3 className="text-xl font-bold mb-4">Photo Album</h3>
             <div className="grid grid-cols-3 gap-4">
               {backpack.map((img, index) => (
                 <div key={index} className="w-full h-40 overflow-hidden">

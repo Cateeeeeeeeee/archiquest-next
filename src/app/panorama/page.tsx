@@ -16,9 +16,9 @@ import EndPage from "./endpage";
 import { getGroqCompletion } from "@/ai/groq";
 
 const prompts = [
-  "A dense tropical rainforest with towering trees, thick undergrowth, and a variety of colorful plants. The air is humid, and sunlight filters through the canopy, creating dappled patterns on the forest floor. Exotic birds, insects, and small mammals can be seen in their natural habitat.",
-  "A vast savanna with golden grasses stretching as far as the eye can see. Scattered acacia trees provide sparse shade, and the sky is a brilliant blue. Herds of zebras, antelopes, and giraffes roam the plains, while lions and other predators lurk in the distance",
-  "A cold, snowy arctic tundra with vast expanses of ice and snow. The landscape is dotted with hardy shrubs and lichen, and the sky has a pale, ethereal glow. Polar bears, arctic foxes, and seals can be seen in this frozen wilderness",
+  "A dense tropical rainforest with towering canopy trees, lush understory vegetation, and diverse flora. The air is warm and humid, with dappled sunlight filtering through the leaves. The forest is alive with the sounds of exotic birds, insects, and small mammals, each adapted to this unique ecosystem. Vibrant colors and intricate patterns abound in this biodiverse wonderland.",
+  "A vast savanna stretching to the horizon, with golden grasses swaying in the gentle breeze. Majestic acacia trees dot the landscape, providing shade and shelter for the abundant wildlife. Herds of grazing animals, such as zebras, antelopes, and gazelles, roam the open plains, while predators like lions, cheetahs, and hyenas watch from a distance. The savanna is a dynamic ecosystem, shaped by the rhythms of the seasons.",
+  "A frozen arctic tundra, blanketed in pristine snow and ice. The landscape is stark and beautiful, with rugged mountains and glaciers in the distance. Hardy plants, such as lichens, mosses, and small shrubs, cling to life in this harsh environment. The tundra is home to unique and resilient animals, including polar bears, arctic foxes, snowy owls, and seals, each adapted to survive in this extreme climate.",
 ];
 
 const musicUrls = [
@@ -33,7 +33,7 @@ export default function App() {
   const [nextSceneImage, setNextSceneImage] = useState<string>();
   const [upscaledImg, setUpscaledImg] = useState<string>("");
   const [prompt, setPrompt] = useState<string>(prompts[0]);
-  const [description, setDescription] = useState<string>("Hold shift and drag to explore");
+  const [description, setDescription] = useState<string>("Hold shift and drag to take photos");
   const [placeholderVisible, setPlaceholderVisible] = useState<boolean>(false);
   const [upscaling, setUpscaling] = useState<boolean>(false);
   const [backpack, setBackpack] = useState<string[]>([]);
@@ -71,7 +71,14 @@ export default function App() {
     document.addEventListener("mousedown", handleClickOutside);
 
     const timer = setInterval(() => {
-      setCountdown((prevCountdown) => prevCountdown - 1);
+      setCountdown((prevCountdown) => {
+        if (prevCountdown > 0) {
+          return prevCountdown - 1;
+        } else {
+          clearInterval(timer);
+          return 0;
+        }
+      });
     }, 1000);
 
     return () => {
@@ -160,44 +167,45 @@ export default function App() {
       `, true);
 
       const scoreJSON = JSON.parse(scoreText);
-
-      // const score = calculateScore(analysis);
       setScore(prevScore => prevScore + scoreJSON.score);
       setSpeciesAnalysis(analysis);
-      if (score > 0) {
-        setDiscoveries(prevDiscoveries => [...prevDiscoveries, `${scoreJSON.species} (${score} points)`]);
+      
+      if (scoreJSON.score > 0) {
+        setDiscoveries(prevDiscoveries => [...prevDiscoveries, `${scoreJSON.species} (${scoreJSON.score} points)`]);
       } else {
-        setDiscoveries(prevDiscoveries => [...prevDiscoveries, "No clear animals or insects found."]);
+        setDiscoveries(prevDiscoveries => [...prevDiscoveries, "No clear animals found."]);
       }
-    } catch (e) {
+      
+      } catch (e) {
       console.error("error creating new pano", e);
-    }
-
-    setSelectCount(prevCount => prevCount + 1);
-    setUpscaling(false);
-
-    if (selectCount === 1) {
-      setSelectCount(0);
-      const currentIndex = prompts.indexOf(prompt);
-      if (currentIndex < prompts.length - 1) {
-        setPrompt(prompts[currentIndex + 1]);
-        setPlaceholderVisible(false);
-        setUpscaledImg("");
-        setSpeciesAnalysis("");
-      } else {
-        handleSaveScore();
       }
-    }
-  };
-
-  //save score
-  const handleSaveScore = async () => {
-    const playerName = localStorage.getItem("playerName");
-    if (playerName) {
-      await saveScore(playerName, score);
-    }
-    setShowEndPage(true);
-  };
+      
+      setSelectCount(prevCount => prevCount + 1);
+      setUpscaling(false);
+      
+      // 移除 if 语句
+      // if (selectCount === 1) {
+      //   setSelectCount(0);
+        const currentIndex = prompts.indexOf(prompt);
+        if (currentIndex < prompts.length - 1) {
+          setPrompt(prompts[currentIndex + 1]);
+          setPlaceholderVisible(false);
+          setUpscaledImg("");
+          setSpeciesAnalysis("");
+        } else {
+          handleSaveScore();
+        }
+      // }
+      };
+      
+      //save score
+      const handleSaveScore = async () => {
+      const playerName = localStorage.getItem("playerName");
+      if (playerName) {
+        await saveScore(playerName, score);
+      }
+      setShowEndPage(true);
+      };
 
   function calculateScore(analysis: string): number {
     const animalKeywords = ["bird", "animal", "mammal", "insect"];
@@ -231,14 +239,18 @@ export default function App() {
             disabled={fetching}
             className="p-2 w-full rounded bg-white "
             onClick={handleCreate}
-          >
+            >
             {fetching ? "Exploring..." : "Explore new place"}
           </button>
         </div>
         <div className="relative w-full h-full">
           <Panorama img={sceneImg} onSelect={handleSelect} immersive={true} />
+          {/* 将提示放在这里 */}
           <div className="absolute top-0 left-0 p-4 flex flex-col max-w-sm">
-            <p className="bg-white p-2">{description}</p>
+            <p className="bg-white p-2 text-2xl font-bold text-red-500 flex items-center">
+              <span className="mr-2">📷</span>
+              Hold shift and drag to take photos
+            </p>
             <div className="relative bg-white w-full h-64 rounded">
               {placeholderVisible && (
                 <>
@@ -275,7 +287,7 @@ export default function App() {
               ref={backpackRef}
               className="fixed top-0 right-0 bottom-0 w-1/2 p-6 bg-white shadow-lg overflow-y-auto"
             >
-              <h2 className="text-3xl font-bold mb-6">Backpack</h2>
+              <h2 className="text-3xl font-bold mb-6">Photo Album</h2>
               <div className="grid grid-cols-2 gap-6">
                 {backpack.map((img, index) => (
                   <div key={index} className="w-full h-64 overflow-hidden">
