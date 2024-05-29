@@ -283,7 +283,7 @@ export default function App() {
               ref={backpackRef}
               className="fixed top-0 right-0 bottom-0 w-1/2 p-6 bg-white shadow-lg overflow-y-auto"
             >
-              <h2 className="text-3xl font-bold mb-6">Backpack</h2>
+              <h2 className="text-3xl font-bold mb-6">Album</h2>
               <div className="grid grid-cols-2 gap-6">
                 {backpack.map((img, index) => (
                   <div key={index} className="w-full h-64 overflow-hidden">
