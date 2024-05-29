@@ -17,7 +17,7 @@ export default function Leaderboard() {
         .from("scores")
         .select("id, created_at, name, score")
         .order("score", { ascending: false })
-        .limit(10);
+        .limit(5);
 
       if (error) {
         console.error("Error fetching leaderboard data:", error);
