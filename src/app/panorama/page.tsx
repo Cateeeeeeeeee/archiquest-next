@@ -34,7 +34,7 @@ export default function App() {
   const [nextSceneImage, setNextSceneImage] = useState<string>();
   const [upscaledImg, setUpscaledImg] = useState<string>("");
   const [prompt, setPrompt] = useState<string>(prompts[0]);
-  const [description, setDescription] = useState<string>("Hold shift and drag to explore");
+  const [description, setDescription] = useState<string>("Hold shift and drag to take photos");
   const [placeholderVisible, setPlaceholderVisible] = useState<boolean>(false);
   const [upscaling, setUpscaling] = useState<boolean>(false);
   const [backpack, setBackpack] = useState<string[]>([]);
