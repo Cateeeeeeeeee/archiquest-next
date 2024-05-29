@@ -21,6 +21,7 @@ const prompts = [
   "A cold, snowy arctic tundra with vast expanses of ice and snow. The landscape is dotted with hardy shrubs and lichen, and the sky has a pale, ethereal glow. Polar bears, arctic foxes, and seals can be seen in this frozen wilderness",
 ];
 
+
 const musicUrls = [
   'audio/CanopyWhispers.mp3',
   'audio/CoralSerenity.mp3',
@@ -71,7 +72,14 @@ export default function App() {
     document.addEventListener("mousedown", handleClickOutside);
 
     const timer = setInterval(() => {
-      setCountdown((prevCountdown) => prevCountdown - 1);
+      setCountdown((prevCountdown) => {
+        if (prevCountdown > 0) {
+          return prevCountdown - 1;
+        } else {
+          clearInterval(timer);
+          return 0;
+        }
+      });
     }, 1000);
 
     return () => {
@@ -348,4 +356,4 @@ async function convertImageToBase64JPEG(url: string) {
     console.error("Error converting image:", error);
     throw error;
   }
-} 
+}
