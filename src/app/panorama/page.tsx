@@ -21,7 +21,6 @@ const prompts = [
   "A cold, snowy arctic tundra with vast expanses of ice and snow. The landscape is dotted with hardy shrubs and lichen, and the sky has a pale, ethereal glow. Polar bears, arctic foxes, and seals can be seen in this frozen wilderness",
 ];
 
-
 const musicUrls = [
   'audio/CanopyWhispers.mp3',
   'audio/CoralSerenity.mp3',
@@ -44,7 +43,7 @@ export default function App() {
   const [speciesAnalysis, setSpeciesAnalysis] = useState<string>("");
   const [score, setScore] = useState<number>(0);
   const [selectCount, setSelectCount] = useState<number>(0);
-  const [countdown, setCountdown] = useState<number>(120);
+  const [countdown, setCountdown] = useState<number>(180);
   const [showEndPage, setShowEndPage] = useState<boolean>(false);
 
   const backpackRef = useRef<HTMLDivElement>(null);
@@ -157,7 +156,6 @@ export default function App() {
         base64
       );
 
-
       const scoreText = await getGroqCompletion(speciesAnalysis, 128, `
       You are a scoring bot in a photography game where the goal is to discover new species of animal. 
       The user will provide you with an analysis of their latest photo, including whether the photo contains any animals. 
@@ -169,14 +167,9 @@ export default function App() {
 
       const scoreJSON = JSON.parse(scoreText);
 
-      // const score = calculateScore(analysis);
       setScore(prevScore => prevScore + scoreJSON.score);
       setSpeciesAnalysis(analysis);
-      if (score > 0) {
-        setDiscoveries(prevDiscoveries => [...prevDiscoveries, `${scoreJSON.species} (${score} points)`]);
-      } else {
-        setDiscoveries(prevDiscoveries => [...prevDiscoveries, "No clear animals found."]);
-      }
+      setDiscoveries(prevDiscoveries => [...prevDiscoveries, analysis]);
     } catch (e) {
       console.error("error creating new pano", e);
     }
@@ -228,7 +221,6 @@ export default function App() {
 
     return score;
   }
-
 
   return (
     <>
@@ -301,17 +293,19 @@ export default function App() {
             className="absolute bottom-0 right-0 m-4 p-2 bg-white rounded"
             onClick={() => setShowDiscoveries(!showDiscoveries)}
           >
-            Discoveries ({discoveries.length})
+            Discovered Place ({discoveries.length})
           </button>
           {showDiscoveries && (
             <div
               ref={discoveriesRef}
               className="absolute bottom-0 right-0 m-4 p-4 bg-white rounded shadow-lg"
             >
-              <h2 className="text-xl font-bold mb-4">Discovered Creatures</h2>
+              <h2 className="text-xl font-bold mb-4">Discovered Place</h2>
               <ul>
                 {discoveries.map((discovery, index) => (
-                  <li key={index}>{discovery}</li>
+                  <li key={index}>
+                    {discovery.split('.')[0]}.
+                  </li>
                 ))}
               </ul>
             </div>
