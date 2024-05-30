@@ -9,10 +9,10 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const saveScore = async (name: string, score: number) => {
+export const saveScore = async (name: string, score: number, imageUrl: string) => {
   const { data, error } = await supabase
     .from('scores')
-    .insert([{ name, score }])
+    .insert([{ name, score, image_url: imageUrl }])
     .select();
 
   if (error) {
@@ -25,7 +25,7 @@ export const saveScore = async (name: string, score: number) => {
 export const getScores = async () => {
   const { data, error } = await supabase
     .from('scores')
-    .select()
+    .select('name, score, image_url')
     .order('score', { ascending: false });
 
   if (error) {
@@ -35,3 +35,37 @@ export const getScores = async () => {
 
   return data;
 };
+
+export const uploadImage = async (imageData: string, fileName: string) => {
+  const { data, error } = await supabase.storage
+    .from('images')
+    .upload(fileName, decode(imageData), {
+      contentType: 'image/jpeg',
+    });
+
+  if (error) {
+    console.error('Error uploading image:', error);
+    return null;
+  }
+
+  const { publicURL, error: urlError } = supabase.storage
+    .from('images')
+    .getPublicUrl(fileName);
+
+  if (urlError) {
+    console.error('Error getting public URL:', urlError);
+    return null;
+  }
+
+  return publicURL;
+};
+
+function decode(base64Data: string) {
+  const byteCharacters = atob(base64Data.split(',')[1]);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return byteArray;
+}

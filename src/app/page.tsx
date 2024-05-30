@@ -1,15 +1,45 @@
 'use client';
+
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Leaderboard from "@/components/Leaderboard";
+import PhotoAlbum from "@/components/PhotoAlbum";
+import { getGroqCompletion } from "@/ai/groq";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
+  const [showPhotoAlbum, setShowPhotoAlbum] = useState(false);
+  const [selectedPlayerName, setSelectedPlayerName] = useState("");
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+
+  useEffect(() => {
+    const fetchLocationOptions = async () => {
+      const prompt = "Generate 5 diverse geographical regions around the world, provide only the regions name and nothing else. Each region should be a separate line.";
+      const completion = await getGroqCompletion(prompt, 100);
+      const options = completion.split("\n").map((option) => option.trim());
+      setLocationOptions(options);
+    };
+
+    fetchLocationOptions();
+  }, []);
 
   const handleStart = () => {
-    if (playerName.trim() !== "") {
+    if (selectedLocation) {
       localStorage.setItem("playerName", playerName);
+      localStorage.setItem("selectedLocation", selectedLocation);
       window.location.href = "/panorama";
+    }
+  };
+
+  const handlePhotoAlbumClick = () => {
+    setSelectedPlayerName(playerName);
+    setShowPhotoAlbum(true);
+  };
+
+  const handleOutsideClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (event.target === event.currentTarget) {
+      setShowPhotoAlbum(false);
     }
   };
 
@@ -24,7 +54,14 @@ export default function Home() {
         className="absolute top-0 left-0 w-full h-full object-cover"
       />
 
-      {/* Add player name input and "Start Game" button */}
+      {/* Game Name */}
+      <div className="absolute top-0 left-0 w-full flex justify-center mt-8">
+        <h1 className="text-8xl font-bold text-white font-old-english">
+          Nature Snap
+        </h1>
+      </div>
+
+      {/* Add player name input and location selection */}
       <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
         <input
           type="text"
@@ -33,6 +70,18 @@ export default function Home() {
           onChange={(e) => setPlayerName(e.target.value)}
           className="px-4 py-2 mb-4 text-xl text-white bg-green-800 rounded-md shadow font-serif"
         />
+        <select
+          value={selectedLocation}
+          onChange={(e) => setSelectedLocation(e.target.value)}
+          className="px-4 py-2 mb-4 text-xl text-white bg-green-800 rounded-md shadow font-serif"
+        >
+          <option value="">Select a location</option>
+          {locationOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
         <Link href="/panorama">
           <button
             onClick={handleStart}
@@ -46,7 +95,7 @@ export default function Home() {
         <div className="p-4 bg-green-800 rounded-md opacity-75 shadow-lg w-1/2 font-serif">
           <h2 className="text-2xl font-bold mb-2">Expedition Guide</h2>
           <ul className="list-disc pl-4">
-            <li>Enter your name and begin the expedition.</li>
+            <li>Enter your name and select a location to begin the expedition.</li>
             <li>Explore the wild realms by clicking and dragging.</li>
             <li>Discover rare and exotic creatures to score points.</li>
             <li>Check your backpack and discoveries.</li>
@@ -54,12 +103,32 @@ export default function Home() {
             <li>Your score will be recorded on the leaderboard.</li>
           </ul>
         </div>
+
+        {/* Add "Photography Collection" button */}
+        <button
+          className="px-8 py-4 text-2xl font-bold text-white bg-green-700 rounded-md opacity-75 hover:opacity-100 transition duration-300 ease-in-out transform hover:scale-110 mb-8 font-old-english"
+          onClick={handlePhotoAlbumClick}
+        >
+          Photography Collection
+        </button>
       </div>
 
       {/* Add score ranking list */}
       <div className="absolute bottom-0 left-0 w-full p-4 font-serif">
         <Leaderboard />
       </div>
+
+      {/* Render PhotoAlbum conditionally */}
+      {showPhotoAlbum && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+          onClick={handleOutsideClick}
+        >
+          <div className="bg-white p-4 rounded shadow-lg">
+            <PhotoAlbum playerName={selectedPlayerName} onClose={() => setShowPhotoAlbum(false)} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
