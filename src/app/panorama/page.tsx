@@ -156,17 +156,11 @@ export default function App() {
         base64
       );
 
-      const scoreText = await getGroqCompletion(speciesAnalysis, 128, `
-      You are a scoring bot in a photography game where the goal is to discover new species of animal. 
-      The user will provide you with an analysis of their latest photo, including whether the photo contains any animals. 
-      Award points for the number of species in the photo.
-      Award more points for rare and exotic species, or species that are small and hard see. 
-      Deduct points if the image contains no animals or is described as unintesting. 
-      Return your response in JSON in the following format {species: string, score: number}
-      `, true);
+      const analysisScore = calculateScore(analysis);
+      
+      const scoreText = await getGroqCompletion(`Here is an analysis of a photo: ${analysis}. The score for this analysis is ${analysisScore}. Please return a JSON string in the following format: {species: string, score: number}`, 128,  "", true);
 
       const scoreJSON = JSON.parse(scoreText);
-
       setScore(prevScore => prevScore + scoreJSON.score);
       setSpeciesAnalysis(analysis);
       setDiscoveries(prevDiscoveries => [...prevDiscoveries, analysis]);
