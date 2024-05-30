@@ -15,7 +15,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchLocationOptions = async () => {
-      const prompt = "Generate 5 diverse geographical regions around the world, provide only the regions name and nothing else. Each region should be a separate line.";
+      const prompt = "Generate a list of 5 diverse geographical regions around the world, provide only the regions name and nothing else. Each region should be a separate line.";
       const completion = await getGroqCompletion(prompt, 100);
       const options = completion.split("\n").map((option) => option.trim());
       setLocationOptions(options);

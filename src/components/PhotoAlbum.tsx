@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getScores } from "@/supabase/supabase";
+import Image from "next/image";
 
 interface PhotoAlbumProps {
   playerName: string;
@@ -24,7 +25,6 @@ export default function PhotoAlbum({ playerName, onClose }: PhotoAlbumProps) {
         setIsLoading(false);
       }
     };
-
     fetchPhotos();
   }, [playerName]);
 
@@ -45,10 +45,12 @@ export default function PhotoAlbum({ playerName, onClose }: PhotoAlbumProps) {
         <div className="grid grid-cols-3 gap-4">
           {photos.map((photo, index) => (
             <div key={index} className="bg-white p-2 rounded shadow-md">
-              <img
+              <Image
                 src={photo.imageUrl}
                 alt={`${playerName}'s photo`}
                 className="w-full h-auto object-cover rounded"
+                width={200}
+                height={200}
               />
             </div>
           ))}

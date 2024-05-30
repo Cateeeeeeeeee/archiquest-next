@@ -11,7 +11,7 @@ import { getOpenAICompletion } from "@/ai/openai";
 import Panorama from "@/components/Panorama";
 import Spinner from "@/components/Spinner";
 import { useState, useEffect, useRef } from "react";
-import { saveScore, uploadImage } from "@/supabase/supabase";
+import { saveScore} from "@/supabase/supabase";
 import EndPage from "./endpage";
 import { getGroqCompletion } from "@/ai/groq";
 
@@ -37,7 +37,7 @@ export default function App() {
   const [speciesAnalysis, setSpeciesAnalysis] = useState<string>("");
   const [score, setScore] = useState<number>(0);
   const [selectCount, setSelectCount] = useState<number>(0);
-  const [countdown, setCountdown] = useState<number>(120);
+  const [countdown, setCountdown] = useState<number>(180);
   const [showEndPage, setShowEndPage] = useState<boolean>(false);
   const [prompts, setPrompts] = useState<string[]>([]);
 
@@ -225,9 +225,13 @@ export default function App() {
 
   const handleSaveScore = async () => {
     const playerName = localStorage.getItem("playerName");
-    if (playerName && upscaledImg) {
-      const imageUrl = await uploadImage(upscaledImg, `${playerName}_${Date.now()}.jpg`);
-      await saveScore(playerName, score, imageUrl);
+    if (playerName) {
+      try {
+        await saveScore(playerName, score, "");
+      } catch (error) {
+        console.error("Error saving score:", error);
+        // Handle the error, show an error message, or take appropriate action
+      }
     }
     setShowEndPage(true);
   };
